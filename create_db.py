@@ -3,5 +3,9 @@ from app.models.meter import Meter
 from app.models.user import User
 
 
-print("Creating db...")
-Base.metadata.create_all(engine)
+async def create_all_tables():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+if __name__ == "__main__":
+    create_all_tables()

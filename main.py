@@ -1,4 +1,4 @@
-import contextlib
+from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -8,10 +8,12 @@ from app.api.v1.health_check import health_router
 from app.api.v1.meter import router
 from app.api.v1.user import user_router
 from app.db.session import create_all_tables
+from app.models.meter import Meter
+from app.models.user import User
 
 
 
-@contextlib.asynccontextmanager
+@asynccontextmanager
 async def lifespan(app: FastAPI):
     await create_all_tables()
     yield
