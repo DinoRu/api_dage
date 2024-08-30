@@ -1,4 +1,4 @@
-#!/Users/dino/FastApi/test_api/venv/bin/python3.12
+#!/Users/dm/Fastapi/test_api/venv/bin/python3.12
 # -*- coding: utf-8 -*-
 import re
 import sys

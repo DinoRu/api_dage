@@ -1,13 +1,18 @@
-FROM python:3.12-slim
+FROM python:3.12
 
-#create work directory on the container
-WORKDIR /app
 
-#Copy current directory content into the container directory /app
-COPY . /app
+ENV PYTHONUNBUFFERED = 1
+ENV PYTHONDONTWRITEBYTECODE=1
 
-# Install any needed packages specified in requirements.txt
+
+WORKDIR /
+
+RUN apt-get update && apt-get install -y postgresql-client
+
+COPY requirements.txt requirements.txt
+
 RUN pip install -r requirements.txt
 
+COPY . .
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
+EXPOSE 8080

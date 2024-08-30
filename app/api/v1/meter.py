@@ -8,7 +8,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from fastapi.responses import Response
 from openpyxl import load_workbook
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 from uuid6 import uuid7
 
@@ -26,14 +26,22 @@ router = APIRouter()
 
 
 @router.get("/find_meter_by_user", response_model=ResponseModel, status_code=status.HTTP_200_OK)
-async def find_meters_by_user(current_user: Annotated[User, Depends(get_current_user)], db: Session = Depends(get_db), status: StatusState = StatusState.EXECUTING.value):
+async def find_meters_by_user(current_user: Annotated[User, Depends(get_current_user)], db: AsyncSession = Depends(get_db), status: StatusState = StatusState.EXECUTING.value):
     service = MeterService(db)
     cache_key = f"meters_user:{status}"
     cache_data = await get_cache(cache_key)
     if cache_data:
         print("Get from cache")
         return json.loads(cache_data)
-    meters = service.get_meters_by_user_department(current_user.department, status)
+    
+    if status == StatusState.CHECKING.value:
+        meters = await service.get_meters_by_user_department(
+            department=current_user.department,
+            status=status, 
+            supervisor=current_user.username
+        )
+    else:
+        meters = await service.get_meters_by_user_department(current_user.department, status)
     data = convert_meter_to_pydantic(meters)
     total = len(data)
     pagination = {
@@ -52,7 +60,7 @@ async def read_meters(
         offset: int = Query(0, ge=0, title="Offset", description="Offset for pagination"),
         limit: int = Query(10, ge=10, title="limit", description="Limit for pagination"),
         order: str = Query("asc", regex="^(asc|desc)$", title="Order", description="Order by completion date"),
-        db: Session = Depends(get_db)
+        db: AsyncSession = Depends(get_db)
 ):
     cache_key = f"meters:offset={offset}:limit={limit}:order={order}"
     #get cached data and mesure time
@@ -66,7 +74,7 @@ async def read_meters(
     # Mesure data fetching time
     start_time = time.time()
     service = MeterService(db)
-    meters, total = service.read_meters(offset=offset, limit=limit, order=order)
+    meters, total = await service.read_meters(offset=offset, limit=limit, order=order)
     data = convert_meter_to_pydantic(meters)
     pagination = {
         'offset': offset,
@@ -97,7 +105,7 @@ async def read_meters(
 @router.get("/", response_model=ResponseModel, status_code=status.HTTP_200_OK)
 async def get_meters(
         status: StatusState = StatusState.EXECUTING.value,
-        db: Session = Depends(get_db)):
+        db: AsyncSession = Depends(get_db)):
     cache_key = f"meters:{status}"
     #GET DATA FROM CACHE
     start_time = time.time()
@@ -109,7 +117,7 @@ async def get_meters(
 
     start_time = time.time()
     service = MeterService(db)
-    meters = service.get_meters(status_filter=status)
+    meters = await service.get_meters(status_filter=status)
     data = convert_meter_to_pydantic(meters)
     total = len(data)
     pagination = {
@@ -127,13 +135,13 @@ async def get_meters(
 
 
 @router.get('/completed', response_model=ResponseModel, status_code=status.HTTP_200_OK)
-async def get_completed_meters(db: Session = Depends(get_db)):
+async def get_completed_meters(db: AsyncSession = Depends(get_db)):
     cache_key = 'Updated_meters'
     cache_data = await get_cache(cache_key)
     if cache_data:
         json.loads(cache_data)
     service = MeterService(db)
-    meters = service.find_completed_meters()
+    meters = await service.find_completed_meters()
     data = convert_meter_to_pydantic(meters)
     total = len(data)
     pagination = {
@@ -147,10 +155,26 @@ async def get_completed_meters(db: Session = Depends(get_db)):
     return response
 
 
-@router.get("/{meter_id}", response_model=ResponseModel, status_code=status.HTTP_200_OK)
-async def get_meter(meter_id: UUID, db: Session = Depends(get_db)):
+@router.get('/supervisor', response_model=ResponseModel, status_code=status.HTTP_200_OK)
+async def get_meters_by_supervisor(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     service = MeterService(db)
-    meter = service.get_meter(meter_id)
+    supervisor = current_user.username
+    meters = await service.get_completed_meters_by_supervisor(supervisor)
+    data = convert_meter_to_pydantic(meters)
+    total = len(data)
+    pagination = {
+        'offset': 0,
+        'limit': 1,
+        'total': total,
+        'order': 'asc'
+    }
+    return create_response(status_code=200, data=data, pagination=pagination)
+
+
+@router.get("/{meter_id}", response_model=ResponseModel, status_code=status.HTTP_200_OK)
+async def get_meter(meter_id: UUID, db: AsyncSession = Depends(get_db)):
+    service = MeterService(db)
+    meter = await service.get_meter(meter_id)
     if not meter:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -167,14 +191,14 @@ async def get_meter(meter_id: UUID, db: Session = Depends(get_db)):
 
 
 @router.post("/create", response_model=Meter, status_code=status.HTTP_201_CREATED)
-async def create_meter(meter: MeterCreate, db: Session = Depends(get_db)):
+async def create_meter(meter: MeterCreate, db: AsyncSession = Depends(get_db)):
     service = MeterService(db)
-    created_meter = service.create(meter)
+    created_meter = await service.create(meter)
     return created_meter
 
 
 @router.post("/upload", response_model=ResponseModel, status_code=status.HTTP_201_CREATED)
-async def upload(file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def upload(file: UploadFile = File(...), db: AsyncSession = Depends(get_db)):
     service = MeterService(db)
     content = file.file.read()
     workbook = load_workbook(io.BytesIO(content))
@@ -202,7 +226,7 @@ async def upload(file: UploadFile = File(...), db: Session = Depends(get_db)):
             )
         except KeyError as e:
             raise HTTPException(status_code=400, detail=f"Missing column in the Excel file: {e}")
-        meter = service.create(meter_data)
+        meter = await service.create(meter_data)
         meters.append(meter)
     total = len(meters)
     data = convert_meter_to_pydantic(meters)
@@ -216,9 +240,9 @@ async def upload(file: UploadFile = File(...), db: Session = Depends(get_db)):
 
 
 @router.put("/update/{meter_id}", response_model=Meter, status_code=status.HTTP_200_OK)
-async def update_meter(meter_id: UUID, meter: MeterUpdate, db: Session = Depends(get_db), user: UserInDB = Depends(get_current_user)):
+async def update_meter(meter_id: UUID, meter: MeterUpdate, db: AsyncSession = Depends(get_db), user: UserInDB = Depends(get_current_user)):
     service = MeterService(db)
-    updated_meter = service.update(meter_id, meter, user)
+    updated_meter = await service.update(meter_id, meter, user)
     cache_key = "meters_user:StatusState.CHECKING"
     if not updated_meter:
         raise HTTPException(status_code=404, detail="Meter not found")
@@ -240,9 +264,9 @@ async def update_meter(meter_id: UUID, meter: MeterUpdate, db: Session = Depends
 
 
 @router.delete("/delete_all", response_model=dict, status_code=status.HTTP_200_OK)
-async def delete_meters_and_file(filename: str, db: Session = Depends(get_db)):
+async def delete_meters_and_file(filename: str, db: AsyncSession = Depends(get_db)):
     service = MeterService(db)
-    service.delete_all_meters()
+    await service.delete_all_meters()
 
     #delete file
     file_path = f"/data/{filename}"
@@ -254,16 +278,16 @@ async def delete_meters_and_file(filename: str, db: Session = Depends(get_db)):
 
 
 @router.delete("/delete", response_model=dict)
-async def delete_meters(db: Session = Depends(get_db)):
+async def delete_meters(db: AsyncSession = Depends(get_db)):
     service = MeterService(db)
-    service.delete_all_meters()
+    await service.delete_all_meters()
     return {"message": "Meters successfully deleted"}
 
 
 @router.post("/download")
-async def download(db: Session = Depends(get_db)):
+async def download(db: AsyncSession = Depends(get_db)):
     service = MeterService(db)
-    file_stream = service.get_completed_meters()
+    file_stream = await service.get_completed_meters()
     file_content = file_stream.getvalue()
     headers = {
         'Content-Disposition': 'attachment; filename="Meters.xlsx"',

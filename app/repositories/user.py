@@ -1,10 +1,12 @@
-from typing import Type, List
+from typing import Type, List, Optional
 from uuid import UUID
 
 from passlib.context import CryptContext
-from sqlalchemy.orm import Session
+from sqlalchemy import delete
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 
-from app.models.user import User as UserModel, User
+from app.models.user import User as UserModel
 from app.schema.user import UserCreate, UserUpdate
 
 pwd_context = CryptContext(
@@ -12,12 +14,11 @@ pwd_context = CryptContext(
     deprecated="auto"
 )
 
-
 class UserRepository:
-    def __init__(self, db: Session):
+    def __init__(self, db: AsyncSession):
         self.db = db
 
-    def create_user(self, user: UserCreate) -> UserModel:
+    async def create_user(self, user: UserCreate) -> UserModel:
         hashed_password = pwd_context.hash(user.password)
         db_user = UserModel(
             username=user.username,
@@ -28,28 +29,32 @@ class UserRepository:
             password=hashed_password
         )
         self.db.add(db_user)
-        self.db.commit()
-        self.db.refresh(db_user)
+        await self.db.commit()
+        await self.db.refresh(db_user)
         return db_user
 
-    def get_user_by_username(self, username: str) -> Type[UserModel]:
-        user = self.db.query(UserModel).filter(UserModel.username == username).first()
-        return user
+    async def get_user_by_username(self, username: str) -> Optional[UserModel]:
+        query = select(UserModel).filter(UserModel.username == username)
+        result = await self.db.execute(query)
+        return result.scalar_one_or_none()
 
-    def get_users_by_department(self, department: str) -> Type[List[UserModel]]:
-        users = self.db.query(UserModel).filter(UserModel.department == department)
-        return users
+    async def get_users_by_department(self, department: str) -> List[UserModel]:
+        query = select(UserModel).filter(UserModel.department == department)
+        result = await self.db.execute(query)
+        return result.scalars().all()
 
-    def get_user(self, user_id: UUID) -> Type[UserModel]:
-        user = self.db.query(UserModel).filter(UserModel.user_id == user_id).first()
-        return user
+    async def get_user(self, user_id: UUID) -> Optional[UserModel]:
+        query = select(UserModel).filter(UserModel.user_id == user_id)
+        result = await self.db.execute(query)
+        return result.scalar_one_or_none()
 
-    def findall(self):
-        users = self.db.query(UserModel).all()
-        return users
+    async def findall(self) -> List[UserModel]:
+        query = select(UserModel)
+        result = await self.db.execute(query)
+        return result.scalars().all()
 
-    def update_user(self, user_id: UUID, user: UserUpdate) -> Type[UserModel] | None:
-        db_user = self.get_user(user_id)
+    async def update_user(self, user_id: UUID, user: UserUpdate) -> Optional[UserModel]:
+        db_user = await self.get_user(user_id)
         if db_user:
             db_user.username = user.username
             db_user.first_name = user.first_name
@@ -58,22 +63,22 @@ class UserRepository:
             db_user.department = user.department
             if user.password:
                 db_user.password = pwd_context.hash(user.password)
-            self.db.commit()
-            self.db.refresh(db_user)
+            await self.db.commit()
+            await self.db.refresh(db_user)
             return db_user
         return None
 
-    def delete_user(self, user_id: UUID) -> bool:
-        user = self.get_user(user_id)
-        if user:
-            self.db.delete(user)
-            self.db.commit()
+    async def delete_user(self, user_id: UUID) -> bool:
+        db_user = await self.get_user(user_id)
+        if db_user:
+            await self.db.delete(db_user)
+            await self.db.commit()
             return True
         return False
 
-    def delete_all_user(self) -> bool:
-        self.db.query(UserModel).delete()
-        self.db.commit()
+    async def delete_all_users(self) -> bool:
+        await self.db.execute(delete(UserModel))
+        await self.db.commit()
         return True
 
     def verify_pswd(self, plain_password: str, hashed_password: str) -> bool:

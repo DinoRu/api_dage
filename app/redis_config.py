@@ -2,7 +2,7 @@ from typing import Optional
 from redis import Redis
 
 
-REDIS_HOST = '127.0.0.1'
+REDIS_HOST = 'redis'
 REDIS_PORT = 6379
 
 redis_client: Optional[Redis] = None

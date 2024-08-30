@@ -46,8 +46,9 @@ def draw_second_line_report_header(worksheet: Worksheet) -> None:
     worksheet.cell(row=2, column=10).value = "Широта"
     worksheet.cell(row=2, column=11).value = "Показания"
     worksheet.cell(row=2, column=12).value = "Счетчик"
-    worksheet.cell(row=2, column=13).value = "Коментарии"
-    worksheet.cell(row=2, column=14).value = "Исполнитель"
+    worksheet.cell(row=2, column=13).value = "Исполнитель"
+    worksheet.cell(row=2, column=14).value = "Коментарии"
+   
 
     worksheet.cell(row=2, column=1).alignment = Alignment(horizontal="center", vertical="center")
     worksheet.cell(row=2, column=2).alignment = Alignment(horizontal="center", vertical="center")
@@ -80,17 +81,19 @@ def draw_second_line_report_header(worksheet: Worksheet) -> None:
 
 def set_size_report_header(worksheet: Worksheet) -> None:
     worksheet.column_dimensions["A"].width = 30
-    worksheet.column_dimensions["B"].width = 20
+    worksheet.column_dimensions["B"].width = 30
     worksheet.column_dimensions["C"].width = 30
-    worksheet.column_dimensions["D"].width = 20
-    worksheet.column_dimensions["E"].width = 20
-    worksheet.column_dimensions["F"].width = 25
-    worksheet.column_dimensions["G"].width = 25
-    worksheet.column_dimensions["H"].width = 20
-    worksheet.column_dimensions["I"].width = 20
-    worksheet.column_dimensions["J"].width = 20
-    worksheet.column_dimensions["K"].width = 20
-    worksheet.column_dimensions["L"].width = 20
+    worksheet.column_dimensions["D"].width = 30
+    worksheet.column_dimensions["E"].width = 30
+    worksheet.column_dimensions["F"].width = 30
+    worksheet.column_dimensions["G"].width = 30
+    worksheet.column_dimensions["H"].width = 30
+    worksheet.column_dimensions["I"].width = 30
+    worksheet.column_dimensions["J"].width = 30
+    worksheet.column_dimensions["K"].width = 40
+    worksheet.column_dimensions["L"].width = 40
+    worksheet.column_dimensions["M"].width = 30
+    worksheet.column_dimensions["N"].width = 40
 
     worksheet.row_dimensions[1].height = 30
     worksheet.row_dimensions[2].height = 30

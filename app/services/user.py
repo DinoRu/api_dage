@@ -1,47 +1,46 @@
 from uuid import UUID
+from typing import List, Optional
 
 from passlib.context import CryptContext
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.repositories.user import UserRepository
 from app.schema.user import UserCreate, UserUpdate
-
+from app.models.user import User as UserModel
 
 class UserService:
-    def __init__(self, db: Session):
+    def __init__(self, db: AsyncSession):
         self.repository = UserRepository(db)
 
-    def create(self, user: UserCreate):
-        user = self.repository.create_user(user)
+    async def create(self, user: UserCreate) -> UserModel:
+        user = await self.repository.create_user(user)
         return user
 
-    def get_user_by_username(self, username: str):
-        user = self.repository.get_user_by_username(username)
+    async def get_user_by_username(self, username: str) -> Optional[UserModel]:
+        user = await self.repository.get_user_by_username(username)
         return user
 
-    def get_user(self, user_id: UUID):
-        user = self.repository.get_user(user_id)
+    async def get_user(self, user_id: UUID) -> Optional[UserModel]:
+        user = await self.repository.get_user(user_id)
         return user
 
-    def get_users(self):
-        users = self.repository.findall()
+    async def get_users(self) -> List[UserModel]:
+        users = await self.repository.findall()
         return users
 
-    def find_users_by_department(self, department: str):
-        users = self.repository.get_users_by_department(department)
+    async def find_users_by_department(self, department: str) -> List[UserModel]:
+        users = await self.repository.get_users_by_department(department)
         return users
 
-    def update_user(self, user_id: UUID, user: UserUpdate):
-        user_updated = self.repository.update_user(user_id, user)
+    async def update_user(self, user_id: UUID, user: UserUpdate) -> Optional[UserModel]:
+        user_updated = await self.repository.update_user(user_id, user)
         return user_updated
 
-    def delete_user(self, user_id: UUID):
-        return self.repository.delete_user(user_id)
+    async def delete_user(self, user_id: UUID) -> bool:
+        return await self.repository.delete_user(user_id)
 
-    def delete_users(self):
-        self.repository.delete_all_user()
+    async def delete_users(self) -> bool:
+        return await self.repository.delete_all_users()
 
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
         return self.repository.verify_pswd(plain_password, hashed_password)
-
-

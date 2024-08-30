@@ -1,22 +1,22 @@
 services:
-  database:
+  db:
     image: postgres:alpine
     restart: on-failure
 
     healthcheck:
-      test: [ 'CMD', 'pg_isready -U postgres' ]
+      test: ["CMD", "pg_isready -U postgres"]
       interval: 30s
       timeout: 10s
       retries: 10
 
     ports:
-      - '5432:5432'
+      - "5432:5432"
     env_file:
       - .env
     environment:
-      POSTGRES_DB: "test_db"
-      POSTGRES_PORT: 5432
-      DB_USER: "postgres"
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASS}
+      - POSTGRES_DB=${DB_NAME}
 
     volumes:
       - ./data:/var/lib/postgresql/data/
@@ -24,19 +24,22 @@ services:
   api:
     container_name: "dag_api"
     build: .
+    command: bash -c "uvicorn main:app --host=0.0.0.0 --port=8080 --reload"
     ports:
       - "8080:8080"
-    environment:
-        - "DATABASE_URL=postgresql://postgres@db:5432/test_db"
     depends_on:
-      - database
+      - db
       - redis
-
+    volumes:
+      - dage-data:/app
 
   redis:
     image: redis
-    container_name: 'dag_api_redis'
+    container_name: "dag_api_redis"
     ports:
       - "6379:6379"
     volumes:
       - .data/db:/data
+
+volumes:
+  dage-data:
