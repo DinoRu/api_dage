@@ -15,3 +15,7 @@ async def get_db():
     async with async_session_maker() as session:
         yield session
    
+
+async def create_all_tables():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)

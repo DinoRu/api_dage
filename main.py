@@ -1,3 +1,4 @@
+import contextlib
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -6,6 +7,14 @@ from fastapi.responses import RedirectResponse
 from app.api.v1.health_check import health_router
 from app.api.v1.meter import router
 from app.api.v1.user import user_router
+from app.db.session import create_all_tables
+
+
+
+@contextlib.asynccontextmanager
+async def lifespan(app: FastAPI):
+    await create_all_tables()
+    yield
 
 app = FastAPI(
     title="Дагэнержи Api",
@@ -17,7 +26,8 @@ app = FastAPI(
     },
     swagger_ui_parameters={
             "persistAuthorization": True
-        }
+    },
+    lifespan=lifespan
 )
 
 #Register the origins
