@@ -29,7 +29,7 @@ async def get_users_by_department(department: str, service: UserService = Depend
 
 @user_router.get("/user/{user_id}", response_model=UserOutDB)
 async def get_user(user_id: UUID, service: UserService = Depends(get_user_service)):
-    user = await service.get_user(user_id)  # Assurez-vous que `get_user` est une méthode asynchrone
+    user = await service.get_user(user_id)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

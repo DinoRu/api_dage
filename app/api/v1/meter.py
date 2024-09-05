@@ -28,12 +28,6 @@ router = APIRouter()
 @router.get("/find_meter_by_user", response_model=ResponseModel, status_code=status.HTTP_200_OK)
 async def find_meters_by_user(current_user: Annotated[User, Depends(get_current_user)], db: AsyncSession = Depends(get_db), status: StatusState = StatusState.EXECUTING.value):
     service = MeterService(db)
-    cache_key = f"meters_user:{status}"
-    cache_data = await get_cache(cache_key)
-    if cache_data:
-        print("Get from cache")
-        return json.loads(cache_data)
-    
     if status == StatusState.CHECKING.value:
         meters = await service.get_meters_by_user_department(
             department=current_user.department,
@@ -51,7 +45,6 @@ async def find_meters_by_user(current_user: Annotated[User, Depends(get_current_
         "order": "asc"
     }
     response = create_response(status_code=200, data=data, pagination=pagination)
-    await set_cache(cache_key, json.dumps(response))
     return response
 
 
@@ -62,17 +55,6 @@ async def read_meters(
         order: str = Query("asc", regex="^(asc|desc)$", title="Order", description="Order by completion date"),
         db: AsyncSession = Depends(get_db)
 ):
-    cache_key = f"meters:offset={offset}:limit={limit}:order={order}"
-    #get cached data and mesure time
-    start_time = time.time()
-    cached_data = await get_cache(cache_key)
-    cache_time = time.time() - start_time
-    if cached_data:
-        print("Get from cache")
-        print(f"Cache hit: Time taken to retrieve from cache: {cache_time:.4f} seconds")
-        return json.loads(cached_data)
-    # Mesure data fetching time
-    start_time = time.time()
     service = MeterService(db)
     meters, total = await service.read_meters(offset=offset, limit=limit, order=order)
     data = convert_meter_to_pydantic(meters)
@@ -89,16 +71,6 @@ async def read_meters(
             "pagination": pagination
         }
     }
-    fetch_time = time.time() - start_time
-
-    # Set to cache and mesure time
-    start_time = time.time()
-    print('Set in cache')
-    await set_cache(cache_key, json.dumps(response))
-    cache_set_time = time.time() - start_time
-    print(f"Cache miss: Time taken to fetch data: {fetch_time:.4f} seconds")
-    print(f"Time taken to set cache: {cache_set_time:.4f} seconds")
-
     return response
 
 
@@ -106,16 +78,6 @@ async def read_meters(
 async def get_meters(
         status: StatusState = StatusState.EXECUTING.value,
         db: AsyncSession = Depends(get_db)):
-    cache_key = f"meters:{status}"
-    #GET DATA FROM CACHE
-    start_time = time.time()
-    cache_data = await get_cache(cache_key)
-    cache_time = time.time() - start_time
-    if cache_data:
-        print(f"Cache hit: Time taken to retrieve from cache: {cache_time:.4f} seconds")
-        return json.loads(cache_data)
-
-    start_time = time.time()
     service = MeterService(db)
     meters = await service.get_meters(status_filter=status)
     data = convert_meter_to_pydantic(meters)
@@ -127,19 +89,11 @@ async def get_meters(
         'order': 'asc'
     }
     response = create_response(status_code=200, data=data, pagination=pagination)
-    fetch_time = time.time() - start_time
-    print(f"Cache miss: Time taken to fetch data: {fetch_time:.4f} seconds")
-    #SET TO CACHE
-    await set_cache(cache_key, json.dumps(response))
     return response
 
 
 @router.get('/completed', response_model=ResponseModel, status_code=status.HTTP_200_OK)
 async def get_completed_meters(db: AsyncSession = Depends(get_db)):
-    cache_key = 'Updated_meters'
-    cache_data = await get_cache(cache_key)
-    if cache_data:
-        json.loads(cache_data)
     service = MeterService(db)
     meters = await service.find_completed_meters()
     data = convert_meter_to_pydantic(meters)
@@ -151,7 +105,6 @@ async def get_completed_meters(db: AsyncSession = Depends(get_db)):
         'order': 'asc'
     }
     response = create_response(status_code=200, data=data, pagination=pagination)
-    await set_cache(cache_key, json.dumps(response))
     return response
 
 
@@ -243,23 +196,8 @@ async def upload(file: UploadFile = File(...), db: AsyncSession = Depends(get_db
 async def update_meter(meter_id: UUID, meter: MeterUpdate, db: AsyncSession = Depends(get_db), user: UserInDB = Depends(get_current_user)):
     service = MeterService(db)
     updated_meter = await service.update(meter_id, meter, user)
-    cache_key = "meters_user:StatusState.CHECKING"
     if not updated_meter:
         raise HTTPException(status_code=404, detail="Meter not found")
-    meter_updated = meter_to_dict(updated_meter)
-    cache_data = await get_cache(cache_key)
-
-    if cache_data:
-
-        meters_list = json.loads(cache_data)
-        meter_index = next((index for (index, d) in enumerate(meters_list['result']['data']) if d['meter_id'] == str(meter_id)), None)
-        if meter_index is not None:
-            meters_list[meter_index] = meter_updated
-        else:
-            meters_list['result']['data'].append(meter_updated)
-    else:
-        meters_list = [meter_updated]
-    await set_cache(cache_key, json.dumps(meters_list))
     return updated_meter
 
 

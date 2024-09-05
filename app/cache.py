@@ -3,9 +3,8 @@ from typing import Any
 from app.redis_config import get_redis_client
 
 
-async def set_cache(key: str, value: Any, expire_seconds: int = 3600):
+async def set_cache(key: str, value: Any, expire_seconds: int = 60):
     redis_client = await get_redis_client()
-    print("Set to cache")
     redis_client.setex(key, expire_seconds, value)
 
 
