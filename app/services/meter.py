@@ -1,4 +1,5 @@
 from uuid import UUID
+from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.repositories.meter import MeterRepository
@@ -21,9 +22,17 @@ class MeterService:
     async def read_meters(self, offset: int, limit: int, order: str):
         return await self.repository.read_all_meters(offset, limit, order)
 
-    async def get_meters(self, status_filter: StatusState):
-        meters = await self.repository.findall(status_filter=status_filter)
-        return meters
+    # async def get_meters(self, 
+    #                      status: StatusState = StatusState.EXECUTING.value):
+    #     meters = await self.repository.findall(status=status)
+    #     return meters
+
+    async def find_all_meters_by_status(self, status: StatusState):
+        try:
+            meters = await self.repository.find_all_meter_by_status(status.value)
+            return meters
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
     async def get_meter(self, meter_id: UUID):
         meter = await self.repository.find_meter(meter_id)
@@ -32,7 +41,9 @@ class MeterService:
     async def delete_all_meters(self):
         await self.repository.delete_meters()
 
-    async def get_meters_by_user_department(self, department: str, status: StatusState = StatusState.EXECUTING, supervisor: str = None):
+    async def get_meters_by_user_department(self, department: str, 
+                                            status: StatusState = StatusState.EXECUTING, 
+                                            supervisor: str = None):
         meters = await self.repository.get_meters_by_user_department(department, status, supervisor)
         return meters
 
