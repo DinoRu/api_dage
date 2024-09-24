@@ -1,7 +1,12 @@
+from datetime import datetime
 from typing import List, Tuple, Optional
 from fastapi import HTTPException, status
 import requests
+<<<<<<< HEAD
 from datetime import datetime
+=======
+import pytz
+>>>>>>> refs/remotes/origin/main
 from sqlalchemy import asc, desc, func, select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -24,10 +29,18 @@ class MeterRepository:
         meters = await self.db.scalars(query.offset(offset).limit(limit))
         return meters.all(), total
 
-    async def findall(self, status_filter: StatusState) -> List[Meter]:
-        query = select(Meter).filter(Meter.status == status_filter)
+    # async def findall(self, 
+    #                   status: StatusState = StatusState.EXECUTING.value) -> List[Meter]:
+    #     query = select(Meter).filter(Meter.status == status)
+    #     result = await self.db.scalars(query)
+    #     return result.all()
+
+    async def find_all_meter_by_status(self, status: StatusState) -> List[Meter]:
+        status_value = status.value if isinstance(status, StatusState) else status
+        query = select(Meter).filter(Meter.status == status_value)
         result = await self.db.scalars(query)
         return result.all()
+        
 
     async def create_meter(self, meter: MeterCreate) -> Meter:
         db_meter = Meter(
@@ -72,7 +85,11 @@ class MeterRepository:
         db_meter.longitude = coordinates.longitude
         db_meter.status = StatusState.CHECKING
         db_meter.supervisor = user.username
+<<<<<<< HEAD
         db_meter.completion_date = datetime.utcnow()
+=======
+        db_meter.completion_date = datetime.now()
+>>>>>>> refs/remotes/origin/main
         await self.db.commit()
         await self.db.refresh(db_meter)
         return db_meter
@@ -86,7 +103,10 @@ class MeterRepository:
         meter = result.scalar_one_or_none()
         return meter
 
-    async def get_meters_by_user_department(self, department: str, status: StatusState = StatusState.EXECUTING, supervisor: str = None) -> List[Meter]:
+    async def get_meters_by_user_department(self, 
+                                            department: str, 
+                                            status: StatusState = StatusState.EXECUTING, 
+                                            supervisor: str = None) -> List[Meter]:
         query = select(Meter).filter(Meter.code.like(f"{department}%")).filter(Meter.status == status)
         if status == StatusState.CHECKING and supervisor:
             query = query.filter(Meter.supervisor == supervisor)

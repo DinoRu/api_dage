@@ -26,7 +26,9 @@ router = APIRouter()
 
 
 @router.get("/find_meter_by_user", response_model=ResponseModel, status_code=status.HTTP_200_OK)
-async def find_meters_by_user(current_user: Annotated[User, Depends(get_current_user)], db: AsyncSession = Depends(get_db), status: StatusState = StatusState.EXECUTING.value):
+async def find_meters_by_user(current_user: Annotated[User, Depends(get_current_user)], 
+                              db: AsyncSession = Depends(get_db), 
+                              status: StatusState = StatusState.EXECUTING.value):
     service = MeterService(db)
     if status == StatusState.CHECKING.value:
         meters = await service.get_meters_by_user_department(
@@ -74,23 +76,31 @@ async def read_meters(
     return response
 
 
-@router.get("/", response_model=ResponseModel, status_code=status.HTTP_200_OK)
-async def get_meters(
-        status: StatusState = StatusState.EXECUTING.value,
-        db: AsyncSession = Depends(get_db)):
-    service = MeterService(db)
-    meters = await service.get_meters(status_filter=status)
-    data = convert_meter_to_pydantic(meters)
-    total = len(data)
-    pagination = {
-        'offset': 0,
-        'limit': total,
-        'total': total,
-        'order': 'asc'
-    }
-    response = create_response(status_code=200, data=data, pagination=pagination)
-    return response
+# @router.get("/", response_model=ResponseModel, status_code=status.HTTP_200_OK)
+# async def get_meters(
+#         status_filter: StatusState = StatusState.EXECUTING.value,
+#         db: AsyncSession = Depends(get_db)):
+#     service = MeterService(db)
+#     meters = await service.get_meters(status=status_filter)
+#     data = convert_meter_to_pydantic(meters)
+#     total = len(data)
+#     pagination = {
+#         'offset': 0,
+#         'limit': total,
+#         'total': total,
+#         'order': 'asc'
+#     }
+#     response = create_response(status_code=200, data=data, pagination=pagination)
+#     return response
 
+@router.get("/meters/by-status", response_model=List[Meter])
+async def find_all_meters_by_status(status: StatusState, db: AsyncSession = Depends(get_db)):
+    service = MeterService(db)
+    try:
+        meters = await service.find_all_meters_by_status(status.value)
+        return meters
+    except HTTPException as e:
+        raise e
 
 @router.get('/completed', response_model=ResponseModel, status_code=status.HTTP_200_OK)
 async def get_completed_meters(db: AsyncSession = Depends(get_db)):
