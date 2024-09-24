@@ -1,6 +1,7 @@
 from typing import List, Tuple, Optional
 from fastapi import HTTPException, status
 import requests
+from datetime import datetime
 from sqlalchemy import asc, desc, func, select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -71,6 +72,7 @@ class MeterRepository:
         db_meter.longitude = coordinates.longitude
         db_meter.status = StatusState.CHECKING
         db_meter.supervisor = user.username
+        db_meter.completion_date = datetime.utcnow()
         await self.db.commit()
         await self.db.refresh(db_meter)
         return db_meter
