@@ -51,6 +51,7 @@ class Meter(BaseModel):
     photo2_url: str | None
     comment: str | None
     status: StatusState = StatusState.EXECUTING
+    created_at: Optional[datetime | None]
     completion_date: datetime | None
 
     class Config:

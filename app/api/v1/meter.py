@@ -182,7 +182,7 @@ async def upload(file: UploadFile = File(...), db: AsyncSession = Depends(get_db
                 longitude=None,
                 supervisor=None,
                 comment=None,
-                completion_date=datetime.now(),
+                completion_date=None,
                 photo1_url=None,
                 photo2_url=None,
                 status=StatusState.EXECUTING

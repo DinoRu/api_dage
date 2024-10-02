@@ -17,6 +17,7 @@ def meter_to_dict(meter) -> dict:
         "longitude": meter.longitude,
         "supervisor": meter.supervisor,
         "comment": meter.comment,
+        "created_at": meter.created_at.isoformat(),
         "completion_date": meter.completion_date.isoformat() if meter.completion_date else None,
         "photo1_url": meter.photo1_url,
         "photo2_url": meter.photo2_url,

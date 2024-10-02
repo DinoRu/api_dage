@@ -3,10 +3,13 @@ from typing import List, Tuple, Optional
 from fastapi import HTTPException, status
 import requests
 <<<<<<< HEAD
+<<<<<<< HEAD
 from datetime import datetime
 =======
 import pytz
 >>>>>>> refs/remotes/origin/main
+=======
+>>>>>>> bb750c1 (modified repositories/meter.py)
 from sqlalchemy import asc, desc, func, select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -23,7 +26,7 @@ class MeterRepository:
         self.db = db
 
     async def read_all_meters(self, offset: int, limit: int, order: str) -> Tuple[List[Meter], int]:
-        order_by_clause = asc(Meter.completion_date) if order.lower() == 'asc' else desc(Meter.completion_date)
+        order_by_clause = asc(Meter.created_at) if order.lower() == 'asc' else desc(Meter.created_at)
         query = select(Meter).order_by(order_by_clause)
         total = await self.db.scalar(select(func.count()).select_from(query.subquery()))
         meters = await self.db.scalars(query.offset(offset).limit(limit))
