@@ -3,10 +3,13 @@ from typing import List, Tuple, Optional
 from fastapi import HTTPException, status
 import requests
 <<<<<<< HEAD
+<<<<<<< HEAD
 from datetime import datetime
 =======
 import pytz
 >>>>>>> refs/remotes/origin/main
+=======
+>>>>>>> bb750c1 (modified repositories/meter.py)
 from sqlalchemy import asc, desc, func, select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
