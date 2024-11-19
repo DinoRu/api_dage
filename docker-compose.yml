@@ -3,7 +3,7 @@ services:
     image: postgres:alpine
     restart: always
     ports:
-      - "5432:5432"
+      - '5432:5432'
     env_file:
       - .env
     environment:
@@ -12,28 +12,26 @@ services:
       - POSTGRES_DB=${DB_NAME}
     volumes:
       - db_data:/var/lib/postgresql/data/
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2g
+        reservations:
+          memory: 512m
 
   api:
-    container_name: "dag_api"
+    container_name: 'dag_api'
     build: .
     command: bash -c "uvicorn main:app --host=0.0.0.0 --port=8080 --reload"
     ports:
-      - "8080:8080"
+      - '8080:8080'
     depends_on:
       - db
 
     volumes:
       - dage-data:/app
 
-  # redis:
-  #   image: redis
-  #   container_name: "dag_api_redis"
-  #   ports:
-  #     - "6379:6379"
-  #   volumes:
-  #     - .data/db:/data
-
 volumes:
   dage-data:
   db_data:
-    driver: local

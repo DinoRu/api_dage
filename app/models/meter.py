@@ -39,3 +39,4 @@ class Meter(TimedBaseModel):
     photo2_url: Mapped[str | None] = mapped_column(String, default=None)
     status: Mapped[StatusState] = mapped_column(Enum(StatusState), default=StatusState.EXECUTING)
     completion_date: Mapped[datetime | None] = mapped_column(DateTime, default=None)
+    

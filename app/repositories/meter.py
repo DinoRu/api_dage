@@ -1,24 +1,18 @@
 from datetime import datetime
-from typing import List, Tuple, Optional
-from fastapi import HTTPException, status
+from typing import List, Optional, Tuple
+
 import requests
-<<<<<<< HEAD
-<<<<<<< HEAD
-from datetime import datetime
-=======
-import pytz
->>>>>>> refs/remotes/origin/main
-=======
->>>>>>> bb750c1 (modified repositories/meter.py)
-from sqlalchemy import asc, desc, func, select, delete
+from fastapi import HTTPException, status
+from sqlalchemy import asc, delete, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from uuid6 import uuid7
+
 from app.models.meter import Meter
 from app.schema.meter import MeterCreate, MeterUpdate
 from app.schema.user import UserInDB
 from app.utils.metadata import PhotoMetadata
-from app.value_objects.status import StatusState, Status
+from app.value_objects.status import Status, StatusState
 
 
 class MeterRepository:
@@ -26,7 +20,7 @@ class MeterRepository:
         self.db = db
 
     async def read_all_meters(self, offset: int, limit: int, order: str) -> Tuple[List[Meter], int]:
-        order_by_clause = asc(Meter.created_at) if order.lower() == 'asc' else desc(Meter.created_at)
+        order_by_clause = asc(Meter.completion_date) if order.lower() == 'asc' else desc(Meter.completion_date)
         query = select(Meter).order_by(order_by_clause)
         total = await self.db.scalar(select(func.count()).select_from(query.subquery()))
         meters = await self.db.scalars(query.offset(offset).limit(limit))
@@ -88,11 +82,7 @@ class MeterRepository:
         db_meter.longitude = coordinates.longitude
         db_meter.status = StatusState.CHECKING
         db_meter.supervisor = user.username
-<<<<<<< HEAD
-        db_meter.completion_date = datetime.utcnow()
-=======
         db_meter.completion_date = datetime.now()
->>>>>>> refs/remotes/origin/main
         await self.db.commit()
         await self.db.refresh(db_meter)
         return db_meter
