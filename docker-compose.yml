@@ -28,6 +28,13 @@ services:
       - '8080:8080'
     depends_on:
       - db
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2g
+        reservations:
+          memory: 512m
 
     volumes:
       - dage-data:/app
