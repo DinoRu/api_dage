@@ -10,13 +10,13 @@ services:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASS}
       - POSTGRES_DB=${DB_NAME}
+    command: postgres -c tcp_keepalives_idle=60 -c tcp_keepalives_interval=10
     volumes:
       - db_data:/var/lib/postgresql/data/
     deploy:
       resources:
         limits:
           cpus: '1.0'
-          memory: 2g
         reservations:
           memory: 512m
 
@@ -32,9 +32,7 @@ services:
       resources:
         limits:
           cpus: '1.0'
-          memory: 2g
-        reservations:
-          memory: 512m
+          memory: '512M'
 
     volumes:
       - dage-data:/app
