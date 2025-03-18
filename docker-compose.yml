@@ -1,6 +1,7 @@
 services:
   db:
-    image: postgres:alpine
+    container_name: "api-db"
+    image: postgres:16
     restart: always
     ports:
       - '5432:5432'
@@ -10,19 +11,46 @@ services:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASS}
       - POSTGRES_DB=${DB_NAME}
-    command: postgres -c tcp_keepalives_idle=60 -c tcp_keepalives_interval=10
     volumes:
       - db_data:/var/lib/postgresql/data/
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - api_network
+
 
 
   api:
     container_name: 'dag_api'
     build: .
-    command: bash -c "uvicorn main:app --host=0.0.0.0 --port=8080 --reload"
+    command: > 
+      bash -c "uvicorn main:app --host=0.0.0.0 --port=8080 --reload --workers=4 && \
+      echo 'App started successfully.
+            Running post-start tasks ...' && \
+      sleep 5 && \
+      echo 'Post-start tasks completed!.'
+      "
     ports:
       - '8080:8080'
     depends_on:
       - db
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8080/healthcheck']
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+    networks:
+      - api_network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
 
     volumes:
       - dage-data:/app
@@ -30,3 +58,7 @@ services:
 volumes:
   dage-data:
   db_data:
+
+networks:
+  api_network:
+    driver: bridge
