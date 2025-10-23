@@ -4,7 +4,7 @@ from typing import List, Optional
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.repositories.user import UserRepository
+from repositories.user import UserRepository
 from app.schema.user import UserCreate, UserUpdate
 from app.models.user import User as UserModel
 

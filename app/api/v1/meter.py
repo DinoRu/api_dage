@@ -1,5 +1,6 @@
 import io
 import json
+import logging
 import os.path
 import time
 from datetime import datetime
@@ -23,6 +24,8 @@ from app.utils.convert_meter_to_pydantic import convert_meter_to_pydantic, creat
 from app.value_objects.status import StatusState, Status
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 
 @router.get("/find_meter_by_user", response_model=ResponseModel, status_code=status.HTTP_200_OK)
@@ -75,23 +78,6 @@ async def read_meters(
     }
     return response
 
-
-# @router.get("/", response_model=ResponseModel, status_code=status.HTTP_200_OK)
-# async def get_meters(
-#         status_filter: StatusState = StatusState.EXECUTING.value,
-#         db: AsyncSession = Depends(get_db)):
-#     service = MeterService(db)
-#     meters = await service.get_meters(status=status_filter)
-#     data = convert_meter_to_pydantic(meters)
-#     total = len(data)
-#     pagination = {
-#         'offset': 0,
-#         'limit': total,
-#         'total': total,
-#         'order': 'asc'
-#     }
-#     response = create_response(status_code=200, data=data, pagination=pagination)
-#     return response
 
 @router.get("/meters/by-status", response_model=List[Meter])
 async def find_all_meters_by_status(status: StatusState, db: AsyncSession = Depends(get_db)):

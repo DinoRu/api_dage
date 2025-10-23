@@ -32,7 +32,7 @@ async def get_current_user(
         raise credential_exception
     token_data = TokenData(user_id=user_id, username=username, department=department)
     service = UserService(db)
-    user = await service.get_user(token_data.user_id)  # Assurez-vous que `get_user` est une méthode asynchrone dans UserService
+    user = await service.get_user(token_data.user_id)
     if user is None:
         raise credential_exception
     return user

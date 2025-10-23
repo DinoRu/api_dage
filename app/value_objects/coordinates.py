@@ -5,4 +5,3 @@ from dataclasses import dataclass
 class Coordinate:
     latitude: float | None
     longitude: float | None
-    

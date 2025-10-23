@@ -27,6 +27,7 @@ async def get_users_by_department(department: str, service: UserService = Depend
     users = await service.find_users_by_department(department)  
     return users
 
+
 @user_router.get("/user/{user_id}", response_model=UserOutDB)
 async def get_user(user_id: UUID, service: UserService = Depends(get_user_service)):
     user = await service.get_user(user_id)
@@ -36,6 +37,7 @@ async def get_user(user_id: UUID, service: UserService = Depends(get_user_servic
             detail="User not found"
         )
     return user
+
 
 @user_router.get("/{username}", response_model=UserOutDB)
 async def get_user_by_username(username: str, service: UserService = Depends(get_user_service)):
@@ -47,6 +49,7 @@ async def get_user_by_username(username: str, service: UserService = Depends(get
         )
     return user
 
+
 @user_router.put("/update_user/{user_id}", response_model=UserOutDB)
 async def update_user(user_id: UUID, user: UserUpdate, service: UserService = Depends(get_user_service)):
     updated_user = await service.update_user(user_id, user)
@@ -56,6 +59,7 @@ async def update_user(user_id: UUID, user: UserUpdate, service: UserService = De
             detail="User not found"
         )
     return updated_user
+
 
 @user_router.delete("/remove/{user_id}", response_model=dict)
 async def remove_user(user_id: UUID, service: UserService = Depends(get_user_service)):
@@ -67,10 +71,12 @@ async def remove_user(user_id: UUID, service: UserService = Depends(get_user_ser
         )
     return {"detail": "User deleted successfully"}
 
+
 @user_router.delete("/delete/all", response_model=dict)
 async def delete_all(service: UserService = Depends(get_user_service)):
     await service.delete_users()
     return {"detail": "All users deleted successfully"}
+
 
 @user_router.post("/signin", response_model=Token, status_code=status.HTTP_201_CREATED)
 async def sign_user_in(user: OAuth2PasswordRequestForm = Depends(),
