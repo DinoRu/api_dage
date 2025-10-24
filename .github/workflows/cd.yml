@@ -1,0 +1,80 @@
+# name: CD
+
+# on:
+#   push:
+#     branches: [ main ]
+#     tags:
+#       - 'v*'
+
+# env:
+#   REGISTRY: docker.io
+#   IMAGE_NAME: dinoru/meter-reading-api
+
+# jobs:
+#   build-and-push:
+#     runs-on: ubuntu-latest
+    
+#     steps:
+#     - uses: actions/checkout@v3
+    
+#     - name: Set up Docker Buildx
+#       uses: docker/setup-buildx-action@v2
+    
+#     - name: Log in to Docker Hub
+#       uses: docker/login-action@v2
+#       with:
+#         username: ${{ secrets.DOCKER_USERNAME }}
+#         password: ${{ secrets.DOCKER_PASSWORD }}
+    
+#     - name: Extract metadata
+#       id: meta
+#       uses: docker/metadata-action@v4
+#       with:
+#         images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+#         tags: |
+#           type=ref,event=branch
+#           type=ref,event=pr
+#           type=semver,pattern={{version}}
+#           type=semver,pattern={{major}}.{{minor}}
+#           type=sha,prefix={{branch}}-
+    
+#     - name: Build and push
+#       uses: docker/build-push-action@v4
+#       with:
+#         context: .
+#         file: ./docker/Dockerfile
+#         push: true
+#         tags: ${{ steps.meta.outputs.tags }}
+#         labels: ${{ steps.meta.outputs.labels }}
+#         cache-from: type=registry,ref=${{ env.IMAGE_NAME }}:buildcache
+#         cache-to: type=registry,ref=${{ env.IMAGE_NAME }}:buildcache,mode=max
+  
+#   deploy:
+#     needs: build-and-push
+#     runs-on: ubuntu-latest
+#     if: github.ref == 'refs/heads/main'
+    
+#     steps:
+#     - uses: actions/checkout@v3
+    
+#     - name: Set up kubectl
+#       uses: azure/setup-kubectl@v3
+    
+#     - name: Configure kubectl
+#       run: |
+#         echo "${{ secrets.KUBECONFIG }}" | base64 -d > kubeconfig
+#         export KUBECONFIG=./kubeconfig
+    
+#     - name: Deploy to Kubernetes
+#       run: |
+#         export KUBECONFIG=./kubeconfig
+#         kubectl set image deployment/api-deployment \
+#           api=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
+#           -n meter-reading
+#         kubectl rollout status deployment/api-deployment -n meter-reading
+    
+#     - name: Verify deployment
+#       run: |
+#         export KUBECONFIG=./kubeconfig
+#         kubectl get pods -n meter-reading
+#         kubectl get svc -n meter-reading
