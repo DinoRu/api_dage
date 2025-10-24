@@ -1,0 +1,101 @@
+# ====================================
+# ⚙️  Fichier .gitignore - Projet FastAPI
+# ====================================
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pkl
+*.log
+*.sqlite3
+*.db
+*.egg-info/
+.eggs/
+.env
+.venv/
+venv/
+ENV/
+env.bak/
+*.bak
+*.swp
+*.swo
+instance/
+.mypy_cache/
+pytest_cache/
+.coverage
+htmlcov/
+
+# --- IDE / éditeurs ---
+.vscode/
+.idea/
+*.iml
+*.sublime-project
+*.sublime-workspace
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+
+# --- Logs et fichiers temporaires ---
+*.log
+logs/
+*.tmp
+tmp/
+*.pid
+
+# --- Docker ---
+# fichiers générés automatiquement
+*.pid
+#docker-compose.override.yml
+#docker-compose.staging.yml
+#docker-compose.prod.yml
+# sauf le principal
+!docker-compose.yml
+
+# --- Alembic (migrations) ---
+alembic/versions/__pycache__/
+alembic/versions/*.pyc
+# garder les scripts de migration, ignorer caches
+!alembic/versions/
+# (si tu veux ignorer les migrations locales temporaires, décommente ci-dessous)
+# alembic/versions/*.py
+
+# --- Environnements ---
+.env
+.env.*
+!.env.example
+
+# --- Tests ---
+.tox/
+nosetests.xml
+test-results.xml
+.coverage
+coverage.xml
+htmlcov/
+.cache/
+junit.xml
+
+# --- Jupyter / notebooks (si utilisés) ---
+.ipynb_checkpoints
+*.ipynb
+
+# --- Frontend (si tu as un dossier web ou React associé) ---
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+
+# --- Data et fichiers uploadés ---
+uploads/
+media/
+staticfiles/
+*.csv
+*.xlsx
+*.json
+*.xml
+
+# --- Local overrides ---
+*.local
+*.secret
+*.tmp
